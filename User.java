@@ -10,8 +10,8 @@ public class User{
         this.Timestamp=LocalDateTime.now().getHour();
 
     }
-    private int  GetTimeStamp(){
-        return this.TrueTimestamp;
+    private long  GetTimeStamp(){
+        return this.Timestamp;
     }
     private String  GetZone(){
         return this.Zone;
