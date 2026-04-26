@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 import math
 class Ubicacion(BaseModel):
-        lat: float
-        lon : float  
+    lat: float
+    lon : float  
     def __init__(self, **data):      
         super().__init__(**data)
         zonemeter_size = 100
