@@ -1,6 +1,6 @@
-# 🚲 Ruta Segura
+#  Ruta Segura
 
-## 📌 Descripción del proyecto
+##  Descripción del proyecto
 
 **Ruta Segura** es una aplicación web de micromovilidad que ayuda a los usuarios a tomar decisiones más seguras y eficientes al desplazarse en ciudad mediante bicicleta o transporte ligero.
 
@@ -10,7 +10,7 @@ Este proyecto busca alinearse con iniciativas urbanas de movilidad sostenible, i
 
 ---
 
-## 🎯 Problema
+##  Problema
 
 En la movilidad urbana actual, los usuarios enfrentan incertidumbre al usar micromovilidad debido a:
 
@@ -24,7 +24,7 @@ Esto limita la adopción de medios de transporte sostenibles.
 
 ---
 
-## 💡 Solución
+##  Solución
 
 Ruta Segura propone un sistema inteligente de recomendación de rutas que:
 
@@ -37,7 +37,7 @@ Ruta Segura propone un sistema inteligente de recomendación de rutas que:
 
 ---
 
-## 🧭 Integración con infraestructura urbana
+##  Integración con infraestructura urbana
 
 El proyecto se diseña considerando planes de desarrollo urbano 2024–2030 que contemplan la implementación de estaciones de bicicletas modernas en la ciudad.
 
@@ -52,22 +52,22 @@ Esto permite una integración natural con infraestructura futura de micromovilid
 
 ---
 
-## 🧪 Funcionalidades del MVP
+##  Funcionalidades del MVP
 
-- 🗺 Mapa interactivo usando Leaflet + OpenStreetMap
-- 📍 Detección de ubicación del usuario
-- 🚲 Visualización de estaciones de bicicletas
-- 🔥 Heatmap de concurrencia (simulado con datos agregados)
-- 🌤 Integración de clima en tiempo real
-- 🧭 Cálculo de ruta:
+-  Mapa interactivo usando Leaflet + OpenStreetMap
+-  Detección de ubicación del usuario
+-  Visualización de estaciones de bicicletas
+-  Heatmap de concurrencia (simulado con datos agregados)
+-  Integración de clima en tiempo real
+-  Cálculo de ruta:
   - usuario → estación de bicicleta
   - estación → destino
-- 🛣 Prioridad de ciclovías en rutas sugeridas
-- 📊 Panel de recomendación de ruta
+-  Prioridad de ciclovías en rutas sugeridas
+-  Panel de recomendación de ruta
 
 ---
 
-## ⚙️ Flujo del sistema
+##  Flujo del sistema
 
 1. El usuario activa su ubicación
 2. Selecciona destino en el mapa
@@ -81,7 +81,7 @@ Esto permite una integración natural con infraestructura futura de micromovilid
 
 ---
 
-## 🧱 Tecnologías utilizadas
+##  Tecnologías utilizadas
 
 - HTML
 - CSS
@@ -93,16 +93,16 @@ Esto permite una integración natural con infraestructura futura de micromovilid
 
 ---
 
-## 📊 Datos utilizados
+##  Datos utilizados
 
-- 🌤 Clima: datos reales en tiempo real (API externa)
-- 👥 Concurrencia: simulada mediante heatmaps agregados
-- 🚲 Estaciones de bicicletas: dataset local en `data.json`
-- 🗺 Mapas: OpenStreetMap
+-  Clima: datos reales en tiempo real (API externa)
+-  Concurrencia: simulada mediante heatmaps agregados
+-  Estaciones de bicicletas: dataset local en `data.json`
+- Mapas: OpenStreetMap
 
 ---
 
-## 🧠 Implementación técnica (resumen)
+##  Implementación técnica (resumen)
 
 El sistema utiliza:
 
@@ -114,7 +114,7 @@ El sistema utiliza:
 
 ---
 
-## 👥 Equipo de desarrollo
+##  Equipo de desarrollo
 
 - Emiliano Huerta — Backend (Python)
 - Jesús Alexander — Backend (Python)
@@ -123,13 +123,13 @@ El sistema utiliza:
 
 ---
 
-## 🎯 Objetivo
+##  Objetivo
 
 Incrementar la adopción de la micromovilidad en entornos urbanos mediante la reducción de incertidumbre en la toma de decisiones de movilidad, integrando infraestructura ciclista y factores ambientales en la planificación de rutas.
 
 ---
 
-## 📌 Alcance del proyecto
+##  Alcance del proyecto
 
 Este proyecto corresponde a un **MVP funcional de hackathon**, por lo que:
 
@@ -140,7 +140,7 @@ Este proyecto corresponde a un **MVP funcional de hackathon**, por lo que:
 
 ---
 
-## 🚀 Futuras mejoras
+##  Futuras mejoras
 
 - Integración con datos reales de estaciones públicas de bicicletas
 - Conexión con APIs de movilidad urbana
