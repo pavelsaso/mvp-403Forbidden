@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>UrbanBike AI - Movilidad Inteligente</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Routing -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+    <!-- Heat -->
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+</head>
+<body>
+
+    <!-- MAPA -->
+    <div id="map"></div>
+
+    <!-- PANEL LATERAL -->
+    <div class="smart-panel">
+
+        <h1>🚲 UrbanBike AI</h1>
+        <p class="subtitle">Sistema Inteligente de Movilidad Urbana</p>
+
+        <div class="infoBox">
+            <h3>🌤 Clima Actual</h3>
+            <p>Temperatura: <span id="temp">--</span></p>
+            <p>Prob. lluvia: <span id="rain">--</span></p>
+        </div>
+
+        <div class="infoBox">
+            <h3>🤖 IA Urbana</h3>
+            <p id="iaStatus">Analizando...</p>
+            <p>Incidentes: <span id="reportsCount">0</span></p>
+            <p>Estaciones: <span id="stationsCount">0</span></p>
+            <p>Corredores: <span id="corridorsCount">0</span></p>
+        </div>
+
+        <div class="infoBox">
+            <h3>🚲 Bicis Disponibles</h3>
+            <p>Total: <span id="bikes">0</span></p>
+            <p>Estación cercana: <span id="nearestStation">---</span></p>
+            <p>Tiempo caminando: <span id="walkTime">--</span></p>
+            <p>Tiempo en bici: <span id="bikeTime">--</span></p>
+            <p>Tiempo total: <span id="totalTime">--</span></p>
+        </div>
+
+        <div class="infoBox">
+            <h3>🎯 ¿A dónde quieres ir?</h3>
+            <input type="text" id="destinationInput" placeholder="Ej. Plaza San Diego">
+            <button onclick="activateDestinationSelection()">Seleccionar destino en mapa</button>
+        </div>
+
+        <div class="buttons">
+            <button onclick="goToNearestBike()">🚶 Buscar bici más cercana</button>
+            <button onclick="toggleHeatMap()">🔥 Activar HeatMap</button>
+            <button onclick="sendReport('Bache')">🕳 Reportar Bache</button>
+            <button onclick="sendReport('Accidente')">⚠ Reportar Accidente</button>
+            <button onclick="sendReport('Semaforo')">🚦 Reportar Semáforo</button>
+        </div>
+
+    </div>
+
+    <!-- PANEL INFERIOR UBER -->
+    <div class="bottom-nav">
+        <h3>🧭 Navegación Inteligente</h3>
+        <p><b>Origen:</b> Tu ubicación</p>
+        <p><b>Estación IA:</b> <span id="navStation">---</span></p>
+        <p><b>Destino:</b> <span id="navDestination">---</span></p>
+        <p><b>Tiempo Total:</b> <span id="navTotal">---</span></p>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
