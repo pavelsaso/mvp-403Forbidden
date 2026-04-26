@@ -3,6 +3,7 @@ import math
 class Ubicacion(BaseModel):
     lat: float
     lon : float  
+    precision : float = 0
     def __init__(self, **data):      
         super().__init__(**data)
         zonemeter_size = 100
