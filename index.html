@@ -1,37 +1,75 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Urban Mobility AI</title>
-
-    <link rel="stylesheet" href="style.css">
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Micromovilidad Smart</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-    <div id="overlay"></div>
+  <header class="topbar">
+    <h1>Smart Mobility</h1>
+    <p>Rutas adaptativas para micromovilidad</p>
+  </header>
 
-    <div id="panel">
-        <h1>🚲 Smart Urban Mobility AI</h1>
-        <p class="subtitle">Plataforma Inteligente de Movilidad con HeatMap Predictivo</p>
+  <!-- PANEL SUPERIOR -->
+  <section class="panel">
 
-        <button onclick="goToNearestBike()">📍 Detectar mi ubicación</button>
-        <button onclick="activateDestinationSelection()">🎯 Seleccionar destino</button>
+    <div class="card">
+      <h2>Planificar ruta</h2>
 
-        <div id="iaStatus">🤖 Sistema IA esperando ubicación...</div>
+      <label>Origen</label>
+      <input type="text" id="origen" placeholder="Ej. Centro">
 
-        <div id="heatInfo">
-            <h3>🔥 Zonas Inteligentes Detectadas</h3>
-            <ul id="heatList"></ul>
-        </div>
+      <label>Destino</label>
+      <input type="text" id="destino" placeholder="Ej. Universidad">
+
+      <button id="btnRuta">Calcular ruta</button>
     </div>
 
-    <div id="map"></div>
+    <div class="card">
+      <h2>Condiciones</h2>
 
-    <script src="script.js"></script>
+      <p>🌤 Clima: <span id="clima">Soleado</span></p>
+      <p>👥 Actividad: <span id="actividad">Media</span></p>
+      <p>⚠️ Seguridad: <span id="seguridadTexto">Moderada</span></p>
+
+      <!-- HEATMAP -->
+      <div class="heatmap-box">
+        <h3>Mapa de seguridad</h3>
+        <div id="heatmap">
+          <!-- aquí se dibujará el heatmap con JS -->
+          Heatmap aquí
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- MAIN -->
+  <section class="main">
+
+    <div class="mapa">
+      <h2>Mapa de ruta</h2>
+      <div class="map-placeholder">
+        Visualización de ruta aquí
+      </div>
+    </div>
+
+    <div class="resultado">
+      <h2>Ruta recomendada</h2>
+      <p id="output">Selecciona origen y destino</p>
+    </div>
+
+  </section>
+
+  <footer>
+    <p>Hackathon - Prototipo de micromovilidad inteligente</p>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
-</html> 
+</html>
