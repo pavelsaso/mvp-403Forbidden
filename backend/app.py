@@ -216,6 +216,58 @@ def debug_state():
             "details": str(e)
         }), 500
 
+@app.route("/routes", methods=["POST"])
+def routes():
+    data = request.get_json(silent=True)
+
+    if data is None:
+        return jsonify({
+            "error": "No se recibió JSON válido."
+        }), 400
+
+    required_fields = [
+        "origin_lat",
+        "origin_lng",
+        "destination_lat",
+        "destination_lng"
+    ]
+
+    for field in required_fields:
+        if field not in data:
+            return jsonify({
+                "error": f"Falta el campo: {field}"
+            }), 400
+
+    try:
+        fast_result = calculate_fast_route(
+            origin_lat=float(data["origin_lat"]),
+            origin_lng=float(data["origin_lng"]),
+            destination_lat=float(data["destination_lat"]),
+            destination_lng=float(data["destination_lng"])
+        )
+
+        safe_result = calculate_safe_route(
+            origin_lat=float(data["origin_lat"]),
+            origin_lng=float(data["origin_lng"]),
+            destination_lat=float(data["destination_lat"]),
+            destination_lng=float(data["destination_lng"]),
+            heatmap_values=HEATMAP_VALUES,
+            reports=REPORTS,
+            is_raining=bool(data.get("is_raining", False)),
+            hour=data.get("hour")
+        )
+
+        return jsonify({
+            "fast": fast_result,
+            "safe": safe_result
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": "Error al calcular rutas.",
+            "details": str(e)
+        }), 500
+
 
 if __name__ == "__main__":
     app.run(

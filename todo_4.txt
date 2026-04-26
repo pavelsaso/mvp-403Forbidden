@@ -1,0 +1,628 @@
+﻿===== C:\frontend\proyecto\mvp-403Forbidden\SelectorRutaFiles\Grafos\Builder.py =====
+import osmnx as ox
+import networkx as nx
+from typing import Optional
+class Builder:
+    LUGAR=  "San AndrÃ©s Cholula, Puebla, MÃ©xico"
+    RADIO_M  = 5000
+    TIPO_RED="bike"
+    _grafo_cache: Optional[nx.MultiDiGraph] = None
+    @staticmethod 
+    def obtener_grafo() -> nx.MultiDiGraph:
+        if Builder._grafo_cache is not None:
+            return Builder._grafo_cache
+        G = ox.graph_from_place(Builder.LUGAR,network_type=Builder.TIPO_RED,retain_all=False,  simplify=True)
+        G = ox.add_edge_lengths(G)
+        Builder._grafo_cache = G
+        return G
+    @staticmethod
+    def obtener_grafo_latlon() -> nx.MultiDiGraph:
+        G = Builder.obtener_grafo()
+        return ox.project_graph(G, to_crs="EPSG:4326")
+        
+
+
+===== C:\frontend\proyecto\mvp-403Forbidden\SelectorRutaFiles\Grafos\Init.py =====
+from fastapi import FastAPI
+from EventFiles import Agregador
+from EventFiles import Ubicacion
+from EventFiles import Event
+from Builder import Builder
+from Ruteo import Ruteo
+from models import Entrada
+
+app = FastAPI(title="Ruta Segura API")
+
+agregador1 = Agregador()
+
+            
+ruteo_distancia = Ruteo("distancia", agregador1)
+ruteo_segura    = Ruteo("segura",    agregador1)
+
+@app.on_event("startup")
+async def startup():
+    Builder.obtener_grafo
+
+@app.post("/update")
+def update_activity(entrada: Entrada):
+
+    posicion     = Ubicacion(lat=entrada.lat, lon=entrada.lon)
+    nuevo_evento = Event(posicion)
+    agregador1.add_event(nuevo_evento)
+    return {"status": "ok", "zone": nuevo_evento.zone}
+
+
+@app.get("/heatmap")
+def heatmap():
+    return agregador1.get_heatmap_values()
+
+
+            # â”€â”€ Endpoints de ruteo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+@app.post("/ruta/distancia")
+def ruta_distancia(entrada: Entrada):         
+    return ruteo_distancia.calcular_ruta(
+                    entrada.lat_origen,
+                    entrada.lon_origen,
+                    entrada.lat_destino,
+                    entrada.lon_destino
+    )
+
+
+@app.post("/ruta/segura")
+def ruta_segura(entrada: Entrada):
+    return ruteo_segura.calcular_ruta(
+                    entrada.lat_origen,
+                    entrada.lon_origen,
+                    entrada.lat_destino,
+                    entrada.lon_destino
+    )
+                
+
+
+===== C:\frontend\proyecto\mvp-403Forbidden\SelectorRutaFiles\Grafos\Ruteo.py =====
+import osmnx as ox
+import networkx as nx
+import json
+import os
+from typing import List, Dict, Any
+from Utils.Geo import haversine
+from EventFiles import Agregador
+from Builder import Builder
+from datetime import datetime
+class Ruteo:
+    W_DIST = 0.3
+    W_HEAT = 0.7
+    def __init__(self, modo: str, agregador: Agregador): #Constructor que decidira el modo en el que operara el ruteo para generar el grafo
+        if modo not in ("distancia", "segura"):
+            raise ValueError(f"modo debe ser 'distancia' o 'segura', recibido: '{modo}'")
+        self.modo      = modo
+        self.agregador = agregador
+        self._fn_peso = (self._peso_distancia if modo == "distancia" else self._peso_segura) #Determina la funcion de peso. Slo guarda en una variable
+    #CARGA DE ESTACIONES DE BICICLETAS
+    path_stations="Data copy.json" #Path de la ruta del archivo que contiene las estaiones
+    _RUTA_JSON = os.path.join(os.path.dirname(__file__),  "..", "data",path_stations)
+    @staticmethod 
+    def _cargar_estaciones() -> List[Dict]:
+        with open(Ruteo._RUTA_JSON, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return [
+            {
+                "id":     e["id"],
+                "nombre": e["name"],
+                "lat":    e["lat"],
+                "lon":    e["lng"],          
+                "bicicletas": e["bikes_available"]
+            }
+            for e in data["stations"]
+            if e["bikes_available"] > 0      
+            ]
+    ESTACIONES = _cargar_estaciones.__func__()
+    #FUNCIONES DE PESO BASADOS EN DJKASTRA(DETERMINA QUE FUNCION SE USA DEPENDIENDO EL MODO)
+    def _peso_distancia(self, u: int, v: int, datos: Dict) -> float:
+        return datos.get("length", 1.0)
+    
+    def _peso_segura(self, u: int, v: int, datos: Dict) -> float:
+        G_ll = Builder.obtener_grafo_latlon()
+        lat = G_ll.nodes[u]["y"]
+        lon = G_ll.nodes[u]["x"]
+        precision = 100 / 111000
+        grid_lat  = int(lat / precision)
+        grid_lon  = int(lon / precision)
+        zone_id   = f"{grid_lat}_{grid_lon}"
+        hora = datetime.now().strftime("%H")
+        heatmap = self.agregador.get_heatmap_values()
+        eventos = heatmap.get(hora, {}).get(zone_id, 0)
+        distancia = datos.get("length", 1.0)
+        penalizacion = distancia / (1 + eventos)
+        return (Ruteo.W_DIST * distancia) + (Ruteo.W_HEAT * penalizacion)
+    #FUNCIONES DE RUTEO
+    def _snap_nodo(self,G: nx.MultiDiGraph, lat: float, lon: float) -> int:
+        return ox.distance.nearest_nodes(G, X=lon, Y=lat)
+    
+    def _estacion_mas_cercana(self,lat: float, lon: float) -> Dict:
+        return min(self.ESTACIONES, key=lambda e: haversine(lat, lon, e["lat"], e["lon"]) )
+    
+    def _nodos_a_coordenadas(self,G_latlon: nx.MultiDiGraph, nodos: List[int]) -> List[tuple]:
+         return [(G_latlon.nodes[osmid]["y"], G_latlon.nodes[osmid]["x"]) for osmid in nodos]
+    #Calcular ruta
+    def calcular_ruta(
+        self,
+        lat_origen:  float,
+        lon_origen:  float,
+        lat_destino: float,
+        lon_destino: float
+    ) -> Dict[str, Any]:
+        G        = Builder.obtener_grafo()
+        G_latlon = Builder.obtener_grafo_latlon()
+        nodo_origen   = self._snap_nodo(G, lat_origen,  lon_origen)
+        nodo_destino  = self._snap_nodo(G, lat_destino, lon_destino)
+        estacion      = self._estacion_mas_cercana(lat_origen, lon_origen)
+        nodo_estacion = self._snap_nodo(G, estacion["lat"], estacion["lon"])
+        tramo_a    = nx.dijkstra_path(G, nodo_origen,   nodo_estacion, weight=self._fn_peso)
+        tramo_b    = nx.dijkstra_path(G, nodo_estacion, nodo_destino,  weight=self._fn_peso)
+        ruta_nodos = tramo_a + tramo_b[1:]
+        return {
+            "ruta": self._nodos_a_coordenadas(G_latlon, ruta_nodos)
+        }
+
+
+===== C:\frontend\proyecto\mvp-403Forbidden\data copy.json =====
+{
+    "stations": [
+        {"id": 1, "name": "EstaciÃ³n Centro de San Pedro Cholula", "lat": 19.062516015756998, "lng": -98.30551429588895, "bikes_available": 20},
+        {"id": 2, "name": "EstaciÃ³n PirÃ¡mide de Cholula ", "lat": 19.059045040847302, "lng": -98.30413948526426, "bikes_available": 15},
+        {"id": 3, "name": "EstaciÃ³n Universidad UDLAP", "lat": 19.05096445543167, "lng": -98.2795282056814, "bikes_available": 10},
+        {"id": 4, "name": "EstaciÃ³n 5 de Mayo", "lat": 19.05954829680447, "lng": -98.29439592541137, "bikes_available": 5},
+        {"id": 5, "name": "EstaciÃ³n Barrio de Santiago Mixquitla", "lat": 19.073532164499234, "lng": -98.30233082493899, "bikes_available": 13},
+        {"id": 6, "name": "EstaciÃ³n Barrio Santa Maria Xixitla", "lat": 19.060891670502844, "lng": -98.31860149717296, "bikes_available": 0},
+        {"id": 7, "name": "EstaciÃ³n Santa BÃ¡rbara Almoloya", "lat": 19.09858169786533, "lng": -98.30608075309135, "bikes_available": 12}
+    ],
+    "safe_corridors": [
+     {   
+      "id": 1,"name": "CiclovÃ­a de la Recta a Cholula","start": {"lat":19.056911,"lng": -98.292057}, 
+      "end": {"lat": 19.063784,"lng": -98.333018},
+      "safety_score": 0.45,
+      "description": "CiclovÃ­a de la Recta a Cholula con gran conectividad y seguridad."
+    },
+    {
+      "id": 2,"name": "CiclovÃ­a PerifÃ©rico EcolÃ³gico - Cholula","start": {"lat":19.065432,"lng":  -98.300981}, 
+      "end": {"lat": 19.055210,"lng": -98.265874},
+      "safety_score": 0.65,
+      "description": "CiclovÃ­a con ambiente un poco agresiva para los ciclistas"
+    },
+    {
+      "id": 3,"name": "CiclovÃ­a de la 14 Oriente - Cholula","start": {"lat":19.060522,"lng": -98.302615}, 
+      "end": {"lat": 19.061905,"lng": -98.294113},
+      "safety_score": 0.78,
+      "description": "CiclovÃ­a de la 14 Oriente con buena iluminaciÃ³n y seÃ±alizaciÃ³n."
+    }
+    ]
+}
+
+
+===== C:\frontend\proyecto\mvp-403Forbidden\data.json =====
+{
+    "stations": [
+        {"id": 1, "name": "EstaciÃ³n Centro de San Pedro Cholula", "lat": 19.062516015756998, "lng": -98.30551429588895, "bikes_available": 20},
+        {"id": 2, "name": "EstaciÃ³n PirÃ¡mide de Cholula ", "lat": 19.059045040847302, "lng": -98.30413948526426, "bikes_available": 15},
+        {"id": 3, "name": "EstaciÃ³n Universidad UDLAP", "lat": 19.05096445543167, "lng": -98.2795282056814, "bikes_available": 10},
+        {"id": 4, "name": "EstaciÃ³n 5 de Mayo", "lat": 19.05954829680447, "lng": -98.29439592541137, "bikes_available": 5},
+        {"id": 5, "name": "EstaciÃ³n Barrio de Santiago Mixquitla", "lat": 19.073532164499234, "lng": -98.30233082493899, "bikes_available": 13},
+        {"id": 6, "name": "EstaciÃ³n Barrio Santa Maria Xixitla", "lat": 19.060891670502844, "lng": -98.31860149717296, "bikes_available": 0},
+        {"id": 7, "name": "EstaciÃ³n Santa BÃ¡rbara Almoloya", "lat": 19.09858169786533, "lng": -98.30608075309135, "bikes_available": 12}
+    ],
+    "safe_corridors": [
+     {   
+      "id": 1,"name": "CiclovÃ­a de la Recta a Cholula","start": {"lat":19.056911,"lng": -98.292057}, 
+      "end": {"lat": 19.063784,"lng": -98.333018},
+      "safety_score": 0.45,
+      "description": "CiclovÃ­a de la Recta a Cholula con gran conectividad y seguridad."
+    },
+    {
+      "id": 2,"name": "CiclovÃ­a PerifÃ©rico EcolÃ³gico - Cholula","start": {"lat":19.065432,"lng":  -98.300981}, 
+      "end": {"lat": 19.055210,"lng": -98.265874},
+      "safety_score": 0.65,
+      "description": "CiclovÃ­a con ambiente un poco agresiva para los ciclistas"
+    },
+    {
+      "id": 3,"name": "CiclovÃ­a de la 14 Oriente - Cholula","start": {"lat":19.060522,"lng": -98.302615}, 
+      "end": {"lat": 19.061905,"lng": -98.294113},
+      "safety_score": 0.78,
+      "description": "CiclovÃ­a de la 14 Oriente con buena iluminaciÃ³n y seÃ±alizaciÃ³n."
+    }
+    ]
+}
+
+
+===== C:\frontend\proyecto\mvp-403Forbidden\fano.html =====
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>UrbanBike AI v2 Graph</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<div class="smart-panel">
+<h1>ðŸš² UrbanBike AI v2</h1>
+<p class="subtitle">Sistema con Grafos Inteligentes</p>
+<div class="infoBox"><h3>ðŸ¤– Estado IA</h3><p id="iaStatus">Construyendo ruta urbana...</p></div>
+<div class="infoBox"><h3>ðŸ“Š Datos</h3><p>Incidentes: <span id="reportsCount">0</span></p><p>Nodos IA: <span id="nodesCount">0</span></p></div>
+<div class="buttons">
+<button onclick="goToNearestBike()">ðŸš¶ Detectar ubicaciÃ³n</button>
+<button onclick="activateDestinationSelection()">ðŸŽ¯ Elegir destino</button>
+<button onclick="toggleHeatMap()">ðŸ”¥ HeatMap</button>
+<button onclick="sendReport('Bache')">ðŸ•³ Bache</button>
+<button onclick="sendReport('Accidente')">âš  Accidente</button>
+</div>
+</div>
+<script src="script.js"></script>
+</body></html>
+
+
+===== C:\frontend\proyecto\mvp-403Forbidden\index.html =====
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Micromovilidad Smart</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header class="topbar">
+    <h1>Smart Mobility</h1>
+    <p>Rutas adaptativas para micromovilidad</p>
+  </header>
+
+  <!-- PANEL SUPERIOR -->
+  <section class="panel">
+
+    <div class="card">
+      <h2>Planificar ruta</h2>
+
+      <label>Origen</label>
+      <input type="text" id="origen" placeholder="Ej. Centro">
+
+      <label>Destino</label>
+      <input type="text" id="destino" placeholder="Ej. Universidad">
+
+      <button id="btnRuta">Calcular ruta</button>
+    </div>
+
+    <div class="card">
+      <h2>Condiciones</h2>
+
+      <p>ðŸŒ¤ Clima: <span id="clima">Soleado</span></p>
+      <p>ðŸ‘¥ Actividad: <span id="actividad">Media</span></p>
+      <p>âš ï¸ Seguridad: <span id="seguridadTexto">Moderada</span></p>
+
+      <!-- HEATMAP -->
+      <div class="heatmap-box">
+        <h3>Mapa de seguridad</h3>
+        <div id="heatmap">
+          <!-- aquÃ­ se dibujarÃ¡ el heatmap con JS -->
+          Heatmap aquÃ­
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- MAIN -->
+  <section class="main">
+
+    <div class="mapa">
+      <h2>Mapa de ruta</h2>
+      <div class="map-placeholder">
+        VisualizaciÃ³n de ruta aquÃ­
+      </div>
+    </div>
+
+    <div class="resultado">
+      <h2>Ruta recomendada</h2>
+      <p id="output">Selecciona origen y destino</p>
+    </div>
+
+  </section>
+
+  <footer>
+    <p>Hackathon - Prototipo de micromovilidad inteligente</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
+
+===== C:\frontend\proyecto\mvp-403Forbidden\pscript.py =====
+yeevejjj
+
+
+===== C:\frontend\proyecto\mvp-403Forbidden\script.js =====
+let pulseCircles = [];
+let map = L.map('map').setView([19.0433,-98.2019],13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'OpenStreetMap'
+}).addTo(map);
+
+let userLocation = null;
+let userMarker = null;
+let destMarker = null;
+let routeLine = null;
+let heatLayer = null;
+
+let userIcon = L.icon({
+    iconUrl:'https://cdn-icons-png.flaticon.com/512/64/64113.png',
+    iconSize:[35,35]
+});
+
+let destIcon = L.icon({
+    iconUrl:'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+    iconSize:[35,35]
+});
+
+function goToNearestBike(){
+    navigator.geolocation.getCurrentPosition(pos=>{
+        userLocation = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+        };
+
+        if(userMarker) map.removeLayer(userMarker);
+
+      userMarker = L.marker([userLocation.lat,userLocation.lng],{icon:userIcon}).addTo(map);
+        map.setView([userLocation.lat,userLocation.lng],15);
+
+        document.getElementById('iaStatus').innerText = 'UbicaciÃ³n detectada. IA lista.';
+
+       fetch(`http://127.0.0.1:9000/update?lat=${userLocation.lat}&lon=${userLocation.lng}`,{
+    method:'POST'
+});
+
+        loadHeatMap();
+        loadBikeStations();
+    });
+}
+
+function activateDestinationSelection(){
+    if(!userLocation){
+        alert("Primero detecta ubicaciÃ³n");
+        return;
+    }
+
+    map.once('click',e=>{
+        let dest = e.latlng;
+
+        if(destMarker) map.removeLayer(destMarker);
+        if(routeLine) map.removeLayer(routeLine);
+
+        destMarker = L.marker([dest.lat,dest.lng],{icon:destIcon}).addTo(map);
+
+        routeLine = L.polyline([
+            [userLocation.lat,userLocation.lng],
+            [dest.lat,dest.lng]
+        ],{color:'blue',weight:5}).addTo(map);
+
+        document.getElementById('iaStatus').innerText = 'Ruta inteligente generada.';
+    });
+}
+
+function loadBikeStations(){
+    fetch('estaciones.json')
+    .then(res=>res.json())
+    .then(data=>{
+        data.forEach(est=>{
+            L.marker([est.lat,est.lng]).addTo(map)
+            .bindPopup("ðŸš² "+est.name);
+        });
+    });
+}
+
+function loadHeatMap(){
+    document.getElementById('iaStatus').innerText = 'ðŸ¤– IA analizando densidad urbana en tiempo real...';
+    fetch('http://127.0.0.1:9000/heatmap')
+    .then(res=>res.json())
+    .then(data=>{
+        let heatPoints = [];
+        let heatList = document.getElementById('heatList');
+        heatList.innerHTML='';
+
+const zoneCoordinates = {
+    1:[19.053,-98.205], // Juarez
+    2:[19.045,-98.200], // Centro
+    3:[19.040,-98.190], // 5 de Mayo
+    4:[19.065,-98.212], // CAPU
+    5:[19.037,-98.190], // Analco
+    6:[19.048,-98.193], // Reforma
+    7:[19.030,-98.215]  // periferica
+};
+
+        pulseCircles.forEach(c=>map.removeLayer(c));
+pulseCircles = [];
+
+        for(let hour in data){
+            for(let zone in data[hour]){
+
+                let cantidad = data[hour][zone];
+                let coords = zoneCoordinates[zone];
+
+                if(coords){
+                    heatPoints.push([coords[0], coords[1], cantidad]);
+                }
+
+                if(cantidad >= 3){
+    let circle = L.circle(coords,{
+        radius: cantidad*25,
+        color:'red',
+        fillColor:'#ff0000',
+        fillOpacity:0.25
+    }).addTo(map);
+
+    pulseCircles.push(circle);
+}
+
+                let li = document.createElement('li');
+                li.innerText = `ðŸ•’ Hora ${hour} | Zona ${zone} â†’ ${cantidad} personas detectadas`;
+                heatList.appendChild(li);
+            }
+        }
+
+        if(heatLayer) map.removeLayer(heatLayer);
+
+        heatLayer = L.heatLayer(heatPoints,{
+            radius:45,
+            blur:35,
+            maxZoom:17
+        }).addTo(map);
+        document.getElementById('iaStatus').innerText = 'ðŸ”¥ HeatMap actualizado en vivo.';
+    });
+}
+setInterval(()=>{
+   loadHeatMap();
+},3600000);
+
+
+===== C:\frontend\proyecto\mvp-403Forbidden\style.css =====
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #f4f6f8;
+}
+
+/* TOPBAR */
+.topbar {
+  background: #111;
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+
+/* PANEL SUPERIOR */
+.panel {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: white;
+  flex: 1;
+  min-width: 280px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  background: #007BFF;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+/* INFO */
+.info p {
+  margin: 10px 0;
+  font-size: 16px;
+}
+
+/* MAIN */
+.main {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.mapa, .resultado {
+  background: white;
+  flex: 1;
+  min-width: 300px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.map-placeholder {
+  height: 300px;
+  background: #ddd;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+/* FOOTER */
+footer {
+  text-align: center;
+  padding: 15px;
+  margin-top: 20px;
+  background: #111;
+  color: white;
+}
+
+/* HEATMAP */
+.heatmap-box {
+  margin-top: 15px;
+}
+
+#heatmap {
+  margin-top: 10px;
+  height: 200px;
+  border-radius: 10px;
+  background: linear-gradient(
+    to right,
+    #00ff00,   /* seguro */
+    #ffff00,   /* medio */
+    #ff0000    /* peligro */
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #222;
+}
+
+
