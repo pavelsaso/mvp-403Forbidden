@@ -1,153 +1,81 @@
-<!-- SMART CITY AI MAP - VERSIÓN PURA EN HTML + CSS + JS (SIN PYTHON) -->
-<!-- TODO EN UN SOLO ARCHIVO index.html -->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart City AI Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <title>UrbanBike AI - Movilidad Inteligente</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <style>
-        body{
-            margin:0;
-            font-family:Arial;
-            background:#edf2f7;
-        }
-        header{
-            background:#0f172a;
-            color:white;
-            text-align:center;
-            padding:20px;
-        }
-        .dashboard{
-            display:flex;
-            justify-content:center;
-            gap:20px;
-            padding:20px;
-            flex-wrap:wrap;
-        }
-        .card{
-            background:white;
-            width:250px;
-            padding:20px;
-            border-radius:15px;
-            text-align:center;
-            box-shadow:0 0 10px rgba(0,0,0,.1);
-        }
-        .buttons{
-            text-align:center;
-            margin:20px;
-        }
-        button{
-            padding:15px;
-            margin:10px;
-            border:none;
-            border-radius:10px;
-            cursor:pointer;
-            font-size:16px;
-        }
-        #map{
-            height:500px;
-            margin:20px;
-            border-radius:20px;
-        }
-        .ia-panel{
-            margin:20px;
-            background:white;
-            padding:20px;
-            border-radius:20px;
-            box-shadow:0 0 10px rgba(0,0,0,.1);
-            font-size:22px;
-        }
-    </style>
+
+    <!-- Routing -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"/>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+
+    <!-- Heat -->
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 </head>
 <body>
 
-<header>
-    <h1>SMART CITY AI MAP</h1>
-    <p>Sistema Inteligente de Riesgo Climático y Urbano</p>
-</header>
+    <!-- MAPA -->
+    <div id="map"></div>
 
-<section class="dashboard">
-    <div class="card">
-        <h2>🌡 Temperatura</h2>
-        <p id="temp">--</p>
+    <!-- PANEL LATERAL -->
+    <div class="smart-panel">
+
+        <h1>🚲 UrbanBike AI</h1>
+        <p class="subtitle">Sistema Inteligente de Movilidad Urbana</p>
+
+        <div class="infoBox">
+            <h3>🌤 Clima Actual</h3>
+            <p>Temperatura: <span id="temp">--</span></p>
+            <p>Prob. lluvia: <span id="rain">--</span></p>
+        </div>
+
+        <div class="infoBox">
+            <h3>🤖 IA Urbana</h3>
+            <p id="iaStatus">Analizando...</p>
+            <p>Incidentes: <span id="reportsCount">0</span></p>
+            <p>Estaciones: <span id="stationsCount">0</span></p>
+            <p>Corredores: <span id="corridorsCount">0</span></p>
+        </div>
+
+        <div class="infoBox">
+            <h3>🚲 Bicis Disponibles</h3>
+            <p>Total: <span id="bikes">0</span></p>
+            <p>Estación cercana: <span id="nearestStation">---</span></p>
+            <p>Tiempo caminando: <span id="walkTime">--</span></p>
+            <p>Tiempo en bici: <span id="bikeTime">--</span></p>
+            <p>Tiempo total: <span id="totalTime">--</span></p>
+        </div>
+
+        <div class="infoBox">
+            <h3>🎯 ¿A dónde quieres ir?</h3>
+            <input type="text" id="destinationInput" placeholder="Ej. Plaza San Diego">
+            <button onclick="activateDestinationSelection()">Seleccionar destino en mapa</button>
+        </div>
+
+        <div class="buttons">
+            <button onclick="goToNearestBike()">🚶 Buscar bici más cercana</button>
+            <button onclick="toggleHeatMap()">🔥 Activar HeatMap</button>
+            <button onclick="sendReport('Bache')">🕳 Reportar Bache</button>
+            <button onclick="sendReport('Accidente')">⚠ Reportar Accidente</button>
+            <button onclick="sendReport('Semaforo')">🚦 Reportar Semáforo</button>
+        </div>
+
     </div>
-    <div class="card">
-        <h2>🌧 Probabilidad de lluvia</h2>
-        <p id="rain">--</p>
+
+    <!-- PANEL INFERIOR UBER -->
+    <div class="bottom-nav">
+        <h3>🧭 Navegación Inteligente</h3>
+        <p><b>Origen:</b> Tu ubicación</p>
+        <p><b>Estación IA:</b> <span id="navStation">---</span></p>
+        <p><b>Destino:</b> <span id="navDestination">---</span></p>
+        <p><b>Tiempo Total:</b> <span id="navTotal">---</span></p>
     </div>
-    <div class="card">
-        <h2>⚠ Riesgo IA</h2>
-        <p id="risk">Analizando...</p>
-    </div>
-</section>
 
-<div class="buttons">
-    <button onclick="sendReport('Bache')">🕳 Reportar Bache</button>
-    <button onclick="sendReport('Accidente')">⚠ Reportar Accidente</button>
-    <button onclick="sendReport('Semaforo')">🚦 Reportar Semáforo</button>
-</div>
-
-<div id="map"></div>
-
-<div class="ia-panel">
-    <p id="prediction">Conectando inteligencia artificial urbana...</p>
-</div>
-
-<script>
-    let reports = JSON.parse(localStorage.getItem('reports')) || [];
-
-    const map = L.map('map').setView([19.0414, -98.2063], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    async function loadWeather(){
-        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=19.04&longitude=-98.20&current=temperature_2m,precipitation_probability');
-        const data = await res.json();
-
-        document.getElementById('temp').innerText = data.current.temperature_2m + ' °C';
-        document.getElementById('rain').innerText = data.current.precipitation_probability + ' %';
-
-        analyzeRisk(data.current.precipitation_probability);
-    }
-
-    function loadReports(){
-        reports.forEach(r=>{
-            L.marker([r.lat,r.lng]).addTo(map).bindPopup(r.type);
-            L.circle([r.lat,r.lng],{radius:250}).addTo(map);
-        });
-    }
-
-    function sendReport(type){
-        navigator.geolocation.getCurrentPosition((pos)=>{
-            const report = {
-                type:type,
-                lat:pos.coords.latitude,
-                lng:pos.coords.longitude
-            };
-            reports.push(report);
-            localStorage.setItem('reports', JSON.stringify(reports));
-            location.reload();
-        });
-    }
-
-    function analyzeRisk(rain){
-        let risk = 'BAJO';
-        if(rain > 60 && reports.length >= 2){
-            risk = 'ALTO';
-        }else if(reports.length >= 1){
-            risk = 'MODERADO';
-        }
-
-        document.getElementById('risk').innerText = risk;
-        document.getElementById('prediction').innerText = 'IA detecta ' + reports.length + ' incidentes urbanos con riesgo ' + risk + ' de tráfico, inundación o accidentes.';
-    }
-
-    loadWeather();
-    loadReports();
-</script>
-
+    <script src="script.js"></script>
 </body>
 </html>
