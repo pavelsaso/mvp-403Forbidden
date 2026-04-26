@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import math
 class Ubicacion(BaseModel):
     lat: float #latitud desde json introducida por herencia de BaseModel
