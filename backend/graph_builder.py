@@ -18,7 +18,7 @@ def build_or_load_graph():
     G = ox.graph_from_point(
         center_point,
         dist=5000,
-        network_type="all",
+        network_type="bike",
         simplify=True
     )
 
