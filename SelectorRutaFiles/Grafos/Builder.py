@@ -1,21 +1,18 @@
 import osmnx as ox
 import networkx as nx
 from typing import Optional
+from models.Entrada import Entrada
 class Builder:
-    LUGAR=  "San Andrés Cholula, Puebla, México"
-    RADIO_M  = 5000
+    def __init__(self):
+        self.Entrada=Entrada()
+        self.Center=Entrada.GetDestino()
+    RADIO_M  = 1000
     TIPO_RED="bike"
-    _grafo_cache: Optional[nx.MultiDiGraph] = None
-    @staticmethod 
-    def obtener_grafo() -> nx.MultiDiGraph:
-        if Builder._grafo_cache is not None:
-            return Builder._grafo_cache
-        G = ox.graph_from_place(Builder.LUGAR,network_type=Builder.TIPO_RED,retain_all=False,  simplify=True)
-        G = ox.add_edge_lengths(G)
-        Builder._grafo_cache = G
+    def obtener_grafo(self) -> nx.MultiDiGraph:
+        G = ox.graph_from_point(center_point=self.Center,dist=self.RADIO_M,network_type=Builder.TIPO_RED,retain_all=False)
         return G
-    @staticmethod
-    def obtener_grafo_latlon() -> nx.MultiDiGraph:
-        G = Builder.obtener_grafo()
+    def obtener_grafo_latlon(self) -> nx.MultiDiGraph:
+        G = self.obtener_grafo()
+        G = ox.add_edge_lengths(G)
         return ox.project_graph(G, to_crs="EPSG:4326")
-        
+

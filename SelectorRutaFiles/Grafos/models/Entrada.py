@@ -4,3 +4,7 @@ class Entrada(BaseModel):
     lon_origen:  float = Field(..., example=-98.3018, description="Longitud del punto de origen")
     lat_destino: float = Field(..., example=19.0558, description="Latitud del punto de destino")
     lon_destino: float = Field(..., example=-98.2836, description="Longitud del punto de destino")
+    def GetOrigen(self):
+        return (self.lat_origen,self.lon_origen)
+    def GetDestino(self):
+        return (self.lat_destino,self.lon_destino)

@@ -1,6 +1,5 @@
 from datetime import datetime
 from Ubicacion import Ubicacion
-
 class Event:
     def __init__(self, ubicacion: Ubicacion): #Constructor
         self.ubicacion = ubicacion

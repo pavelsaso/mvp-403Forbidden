@@ -3,7 +3,7 @@ from EventFiles import Agregador
 from EventFiles import Ubicacion
 from EventFiles import Event
 from Builder import Builder
-from Ruteo import Ruteo
+from SelectorRutaFiles.Grafos.Ruteo1 import Ruteo
 from models import Entrada
 
 app = FastAPI(title="Ruta Segura API")
