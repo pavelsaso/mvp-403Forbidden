@@ -1,15 +1,33 @@
-from pydantic import BaseModel, Field
-import math
-class Ubicacion(BaseModel):
-    lat: float #latitud desde json introducida por herencia de BaseModel
-    lon : float  #longitud desde json introducida por herencia de BaseModel
-    precision : float = 0
-    def __init__(self, **kwargs):  #Metodo constructor  
-        super().__init__(**kwargs)
-        zonemeter_size = 100
-        self.precision = zonemeter_size / 111000   #Medida del largo de un cuadrito en grados
-    def getzoneId(self): #Metodo que devuelve el ID de cada zona basado en latitud y longitud
-        grid_lat= math.floor(self.lat/self.precision) #Distancia de grados entre medida de cada cuadrito, cantidad de cuadritos en los grados evaluados
-        grid_lon= math.floor(self.lon/self.precision)
-        return f"{grid_lat}_{grid_lon}" #Regresa texto con el ID de cada zone(Cantidad de cuadritos en x y en y)
+class Ubicacion:
+    def __init__(self, lat, lon):
+        self.lat = lat
+        self.lon = lon
 
+    def getZoneId(self):
+
+        # Avenida Juarez
+        if 19.050 <= self.lat <= 19.055 and -98.210 <= self.lon <= -98.200:
+            return 1
+
+        # Centro Historico
+        elif 19.040 <= self.lat <= 19.050 and -98.205 <= self.lon <= -98.195:
+            return 2
+
+        # Blvd 5 de Mayo
+        elif 19.035 <= self.lat <= 19.045 and -98.200 <= self.lon <= -98.185:
+            return 3
+
+        # CAPU
+        elif 19.060 <= self.lat <= 19.070 and -98.220 <= self.lon <= -98.205:
+            return 4
+
+        # Analco
+        elif 19.035 <= self.lat <= 19.040 and -98.195 <= self.lon <= -98.185:
+            return 5
+
+        # Reforma
+        elif 19.045 <= self.lat <= 19.052 and -98.198 <= self.lon <= -98.188:
+            return 6
+
+        else:
+            return 7
