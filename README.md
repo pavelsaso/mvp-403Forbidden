@@ -42,7 +42,6 @@ Ruta Segura propone un sistema inteligente de recomendación de rutas que:
 El proyecto se diseña considerando planes de desarrollo urbano 2024–2030 que contemplan la implementación de estaciones de bicicletas modernas en la ciudad.
 
 Ruta Segura se alinea con esta visión al:
-
 - Mapear estaciones de bicicletas en la ciudad
 - Conectar usuarios con la estación más cercana o más segura
 - Generar rutas desde la estación hacia el destino
@@ -61,7 +60,7 @@ Esto permite una integración natural con infraestructura futura de micromovilid
 -  Integración de clima en tiempo real
 -  Cálculo de ruta:
   - usuario → estación de bicicleta
-  - estación → destino
+  - usuario → destino
 -  Prioridad de ciclovías en rutas sugeridas
 -  Panel de recomendación de ruta
 
