@@ -1,12 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <script src="script.js"></script>
+    <title>Smart Urban Mobility AI</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 <body>
-    
+
+    <div id="overlay"></div>
+
+    <div id="panel">
+        <h1>🚲 Smart Urban Mobility AI</h1>
+        <p class="subtitle">Plataforma Inteligente de Movilidad con HeatMap Predictivo</p>
+
+        <button onclick="goToNearestBike()">📍 Detectar mi ubicación</button>
+        <button onclick="activateDestinationSelection()">🎯 Seleccionar destino</button>
+
+        <div id="iaStatus">🤖 Sistema IA esperando ubicación...</div>
+
+        <div id="heatInfo">
+            <h3>🔥 Zonas Inteligentes Detectadas</h3>
+            <ul id="heatList"></ul>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="script.js"></script>
 </body>
-</html>
+</html> 

@@ -1,91 +1,105 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { MapPin, Bike, Route, Brain, Flame } from 'lucide-react';
+let map = L.map('map').setView([19.0433,-98.2019],13);
 
-export default function UrbanMobilityDashboard(){
-  const [status,setStatus] = useState('Sistema IA esperando ubicación...');
-  const [routeReady,setRouteReady] = useState(false);
-  const [heatZones] = useState([
-    {id:'Zona A', level:'Alta actividad'},
-    {id:'Zona B', level:'Media actividad'},
-    {id:'Zona C', level:'Baja actividad'}
-  ]);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'OpenStreetMap'
+}).addTo(map);
 
-  const detectLocation = ()=>{
-    setStatus('Ubicación detectada. IA lista.');
-  }
+let userLocation = null;
+let userMarker = null;
+let destMarker = null;
+let routeLine = null;
+let heatLayer = null;
 
-  const generateRoute = ()=>{
-    setStatus('Ruta inteligente calculada con Dijkstra + zonas seguras');
-    setRouteReady(true);
-  }
+let userIcon = L.icon({
+    iconUrl:'https://cdn-icons-png.flaticon.com/512/64/64113.png',
+    iconSize:[35,35]
+});
 
-  return (
-    <div className='min-h-screen bg-slate-100 p-6'>
-      <motion.h1 
-        initial={{opacity:0,y:-20}}
-        animate={{opacity:1,y:0}}
-        className='text-4xl font-bold text-center mb-6'>
-        Plataforma Inteligente de Movilidad Urbana
-      </motion.h1>
+let destIcon = L.icon({
+    iconUrl:'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+    iconSize:[35,35]
+});
 
-      <div className='grid md:grid-cols-3 gap-6'>
-        <Card className='rounded-2xl shadow-xl'>
-          <CardContent className='p-6'>
-            <div className='flex items-center gap-3 mb-3'>
-              <MapPin size={28}/>
-              <h2 className='text-xl font-semibold'>Ubicación del Usuario</h2>
-            </div>
-            <Button onClick={detectLocation} className='w-full mb-3'>Detectar mi ubicación</Button>
-            <p>{status}</p>
-          </CardContent>
-        </Card>
+function goToNearestBike(){
+    navigator.geolocation.getCurrentPosition(pos=>{
+        userLocation = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+        };
 
-        <Card className='rounded-2xl shadow-xl'>
-          <CardContent className='p-6'>
-            <div className='flex items-center gap-3 mb-3'>
-              <Route size={28}/>
-              <h2 className='text-xl font-semibold'>Ruta Inteligente</h2>
-            </div>
-            <Button onClick={generateRoute} className='w-full mb-3'>Seleccionar destino y calcular</Button>
-            {routeReady && <div className='mt-2 text-sm'>Ruta segura mostrada en mapa con estaciones cercanas.</div>}
-          </CardContent>
-        </Card>
+        if(userMarker) map.removeLayer(userMarker);
 
-        <Card className='rounded-2xl shadow-xl'>
-          <CardContent className='p-6'>
-            <div className='flex items-center gap-3 mb-3'>
-              <Brain size={28}/>
-              <h2 className='text-xl font-semibold'>IA HeatMap Python</h2>
-            </div>
-            {heatZones.map((z,i)=>(
-              <div key={i} className='flex justify-between border-b py-2'>
-                <span>{z.id}</span>
-                <span>{z.level}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+        userMarker = L.marker([userLocation.lat,userLocation.lng],{icon:userIcon}).addTo(map);
+        map.setView([userLocation.lat,userLocation.lng],15);
 
-      <motion.div 
-        initial={{opacity:0}}
-        animate={{opacity:1}}
-        transition={{delay:0.4}}
-        className='mt-8 bg-white rounded-2xl shadow-xl p-6'>
-        <h2 className='text-2xl font-bold mb-4 flex items-center gap-2'><Bike/> Vista Visual del Sistema</h2>
-        <div className='w-full h-96 rounded-2xl border-4 border-dashed flex flex-col items-center justify-center text-center'>
-          <Flame size={48} className='mb-3'/>
-          <p className='text-lg'>Aquí irá incrustado el mapa Leaflet en tiempo real:</p>
-          <p>• Flecha/Icono del usuario</p>
-          <p>• Destino seleccionado</p>
-          <p>• Ruta calculada</p>
-          <p>• HeatMap de zonas con más eventos desde FastAPI</p>
-          <p>• Estaciones de bicicletas cercanas</p>
-        </div>
-      </motion.div>
-    </div>
-  )
+        document.getElementById('iaStatus').innerText = 'Ubicación detectada. IA lista.';
+
+       fetch(`http://127.0.0.1:9000/update?lat=${userLocation.lat}&lon=${userLocation.lng}`,{
+    method:'POST'
+});
+
+        loadHeatMap();
+        loadBikeStations();
+    });
+}
+
+function activateDestinationSelection(){
+    if(!userLocation){
+        alert("Primero detecta ubicación");
+        return;
+    }
+
+    map.once('click',e=>{
+        let dest = e.latlng;
+
+        if(destMarker) map.removeLayer(destMarker);
+        if(routeLine) map.removeLayer(routeLine);
+
+        destMarker = L.marker([dest.lat,dest.lng],{icon:destIcon}).addTo(map);
+
+        routeLine = L.polyline([
+            [userLocation.lat,userLocation.lng],
+            [dest.lat,dest.lng]
+        ],{color:'blue',weight:5}).addTo(map);
+
+        document.getElementById('iaStatus').innerText = 'Ruta inteligente generada.';
+    });
+}
+
+function loadBikeStations(){
+    fetch('estaciones.json')
+    .then(res=>res.json())
+    .then(data=>{
+        data.forEach(est=>{
+            L.marker([est.lat,est.lng]).addTo(map)
+            .bindPopup("🚲 "+est.name);
+        });
+    });
+}
+
+function loadHeatMap(){
+    fetch('http://127.0.0.1:9000/heatmap')
+    .then(res=>res.json())
+    .then(data=>{
+        let heatPoints = [];
+        let heatList = document.getElementById('heatList');
+        heatList.innerHTML='';
+
+        for(let hour in data){
+            for(let zone in data[hour]){
+                let lat = 19.0433 + (Math.random()-0.5)*0.02;
+                let lng = -98.2019 + (Math.random()-0.5)*0.02;
+
+                heatPoints.push([lat,lng,data[hour][zone]]);
+
+                let li = document.createElement('li');
+                li.innerText = `Hora ${hour} - Zona ${zone}: ${data[hour][zone]} eventos`;
+                heatList.appendChild(li);
+            }
+        }
+
+        if(heatLayer) map.removeLayer(heatLayer);
+
+        heatLayer = L.heatLayer(heatPoints,{radius:25}).addTo(map);
+    });
 }
