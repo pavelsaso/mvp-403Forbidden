@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Ruta Segura - Score Voice Demo</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  justify-content: center;
+  padding-top: 40px;
+}
+
+.container {
+  width: 420px;
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+h2 {
+  text-align: center;
+}
+
+.slider-group {
+  margin: 15px 0;
+}
+
+label {
+  font-size: 14px;
+}
+
+input[type=range] {
+  width: 100%;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2563eb;
+}
+
+#scoreBox {
+  margin-top: 15px;
+  padding: 10px;
+  background: #0b1220;
+  border-radius: 8px;
+}
+
+.avatar {
+  width: 50px;
+  height: 50px;
+  margin: 10px auto;
+  border-radius: 50%;
+  background: #64748b;
+}
+
+.speaking {
+  animation: pulse 1s infinite;
+  background: #22c55e !important;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>🚲 Ruta Segura</h2>
+
+<div id="avatar" class="avatar"></div>
+
+<div class="slider-group">
+<label>Seguridad (S)</label>
+<input type="range" id="seguridad" min="0" max="1" step="0.01" value="0.7">
+</div>
+
+<div class="slider-group">
+<label>Cercanía (D inversa)</label>
+<input type="range" id="distancia" min="0" max="1" step="0.01" value="0.5">
+</div>
+
+<div class="slider-group">
+<label>Cobertura ciclovías (C)</label>
+<input type="range" id="ciclovias" min="0" max="1" step="0.01" value="0.6">
+</div>
+
+<div class="slider-group">
+<label>Acceso estación (E)</label>
+<input type="range" id="estacion" min="0" max="1" step="0.01" value="0.5">
+</div>
+
+<button onclick="calcularRuta()">Generar ruta + voz</button>
+
+<div id="scoreBox">Score: -</div>
+
+</div>
+
+<script>
+
+// 🎯 pesos (puedes cambiarlos)
+const w1 = 0.35; // seguridad
+const w2 = 0.25; // distancia
+const w3 = 0.25; // ciclovías
+const w4 = 0.15; // estación
+
+function calcularScore(s, d, c, e) {
+  return (s*w1 + d*w2 + c*w3 + e*w4).toFixed(2);
+}
+
+function generarTexto(score, s, d, c, e) {
+
+  if (score > 0.8 && s > 0.7) {
+    return "Esta es la ruta más segura disponible. Prioriza ciclovías y zonas de baja congestión.";
+  }
+
+  if (c > 0.7 && e > 0.6) {
+    return "La ruta recomendada utiliza infraestructura ciclista y conecta con una estación de bicicletas cercana.";
+  }
+
+  if (d < 0.4) {
+    return "Se prioriza una ruta más corta, aunque con menor cobertura ciclista.";
+  }
+
+  if (s < 0.5) {
+    return "Se recomienda precaución, esta ruta tiene menor percepción de seguridad.";
+  }
+
+  return "Esta ruta balancea distancia, seguridad y accesibilidad para micromovilidad urbana.";
+}
+
+function calcularRuta() {
+
+  const s = parseFloat(document.getElementById("seguridad").value);
+  const d = parseFloat(document.getElementById("distancia").value);
+  const c = parseFloat(document.getElementById("ciclovias").value);
+  const e = parseFloat(document.getElementById("estacion").value);
+
+  const score = calcularScore(s, d, c, e);
+
+  document.getElementById("scoreBox").innerText =
+    "Score de Ruta: " + score;
+
+  const texto = generarTexto(score, s, d, c, e);
+
+  const avatar = document.getElementById("avatar");
+  avatar.classList.add("speaking");
+
+  const speech = new SpeechSynthesisUtterance(texto);
+  speech.lang = "es-MX";
+  speech.rate = 1;
+
+  speech.onend = () => {
+    avatar.classList.remove("speaking");
+  };
+
+  speechSynthesis.speak(speech);
+}
+
+</script>
+
+</body>
+</html>
