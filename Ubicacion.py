@@ -1,11 +1,11 @@
 from pydantic import BaseModel
 import math
 class Ubicacion(BaseModel):
-    lat: float
-    lon : float  
+    lat: float #latitud desde json introducida por herencia de BaseModel
+    lon : float  #longitud desde json introducida por herencia de BaseModel
     precision : float = 0
-    def __init__(self, **data):      
-        super().__init__(**data)
+    def __init__(self, **kwargs):  #Metodo constructor    
+        super().__init__(**kwargs)
         zonemeter_size = 100
         self.precision = zonemeter_size / 111000    
     def getzoneId(self):
