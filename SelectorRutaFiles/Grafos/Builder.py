@@ -8,8 +8,8 @@ class Builder:
     _grafo_cache: Optional[nx.MultiDiGraph] = None
     @staticmethod 
     def obtener_grafo() -> nx.MultiDiGraph:
-        if _grafo_cache is not None:
-            return _grafo_cache
+        if Builder._grafo_cache is not None:
+            return Builder._grafo_cache
         G = ox.graph_from_place(Builder.LUGAR,network_type=Builder.TIPO_RED,retain_all=False,  simplify=True)
         G = ox.add_edge_lengths(G)
         Builder._grafo_cache = G

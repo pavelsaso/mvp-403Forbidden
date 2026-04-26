@@ -3,8 +3,8 @@ import networkx as nx
 import json
 import os
 from typing import List, Dict, Any
-from utils.geo import haversine
-from Agregador import Agregador
+from Utils.Geo import haversine
+from EventFiles import Agregador
 from Builder import Builder
 from datetime import datetime
 class Ruteo:

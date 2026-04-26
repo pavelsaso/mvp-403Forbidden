@@ -1,9 +1,9 @@
 from fastapi import FastAPI
-from Agregador import Agregador
-from Ubicacion import Ubicacion
-from Event import Event
+from EventFiles import Agregador
+from EventFiles import Ubicacion
+from EventFiles import Event
 from Builder import Builder
-from grafo.router import Ruteo
+from Ruteo import Ruteo
 from models import Entrada
 
 app = FastAPI(title="Ruta Segura API")
