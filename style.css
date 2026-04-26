@@ -1,0 +1,132 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #f4f6f8;
+}
+
+/* TOPBAR */
+.topbar {
+  background: #111;
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+
+/* PANEL SUPERIOR */
+.panel {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: white;
+  flex: 1;
+  min-width: 280px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card h2 {
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  margin-top: 15px;
+  width: 100%;
+  padding: 10px;
+  background: #007BFF;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+/* INFO */
+.info p {
+  margin: 10px 0;
+  font-size: 16px;
+}
+
+/* MAIN */
+.main {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  flex-wrap: wrap;
+}
+
+.mapa, .resultado {
+  background: white;
+  flex: 1;
+  min-width: 300px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.map-placeholder {
+  height: 300px;
+  background: #ddd;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+/* FOOTER */
+footer {
+  text-align: center;
+  padding: 15px;
+  margin-top: 20px;
+  background: #111;
+  color: white;
+}
+
+/* HEATMAP */
+.heatmap-box {
+  margin-top: 15px;
+}
+
+#heatmap {
+  margin-top: 10px;
+  height: 200px;
+  border-radius: 10px;
+  background: linear-gradient(
+    to right,
+    #00ff00,   /* seguro */
+    #ffff00,   /* medio */
+    #ff0000    /* peligro */
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #222;
+}

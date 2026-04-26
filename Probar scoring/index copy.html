@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Prueba de Scoring - Ruta Segura</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      display: flex;
+      height: 100vh;
+    }
+
+    #panel {
+      width: 360px;
+      padding: 20px;
+      background: #f7f7f7;
+      overflow-y: auto;
+      border-right: 1px solid #ddd;
+    }
+
+    #map {
+      flex: 1;
+    }
+
+    .score-box {
+      background: white;
+      padding: 14px;
+      margin-top: 15px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border: none;
+      background: #26734d;
+      color: white;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1e5c3d;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="panel">
+    <h2>Ruta Segura</h2>
+    <p>Prueba local del score de rutas.</p>
+
+    <button id="btnUseTestLocation">Usar ubicación de prueba</button>
+
+    <p><strong>Instrucción:</strong> da clic en el mapa para seleccionar destino.</p>
+
+    <div id="result" class="score-box">
+      Esperando selección de destino...
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="script copy.js"></script>
+</body>
+</html>

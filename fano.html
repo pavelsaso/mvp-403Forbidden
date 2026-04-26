@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>UrbanBike AI v2 Graph</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<div class="smart-panel">
+<h1>🚲 UrbanBike AI v2</h1>
+<p class="subtitle">Sistema con Grafos Inteligentes</p>
+<div class="infoBox"><h3>🤖 Estado IA</h3><p id="iaStatus">Construyendo ruta urbana...</p></div>
+<div class="infoBox"><h3>📊 Datos</h3><p>Incidentes: <span id="reportsCount">0</span></p><p>Nodos IA: <span id="nodesCount">0</span></p></div>
+<div class="buttons">
+<button onclick="goToNearestBike()">🚶 Detectar ubicación</button>
+<button onclick="activateDestinationSelection()">🎯 Elegir destino</button>
+<button onclick="toggleHeatMap()">🔥 HeatMap</button>
+<button onclick="sendReport('Bache')">🕳 Bache</button>
+<button onclick="sendReport('Accidente')">⚠ Accidente</button>
+</div>
+</div>
+<script src="script.js"></script>
+</body></html>
