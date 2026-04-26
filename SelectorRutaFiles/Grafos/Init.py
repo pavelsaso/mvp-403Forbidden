@@ -19,7 +19,7 @@ async def startup():
     Builder.obtener_grafo
 
 @app.post("/update")
-def update_activity(entrada: EntradaEvento):
+def update_activity(entrada: Entrada):
 
     posicion     = Ubicacion(lat=entrada.lat, lon=entrada.lon)
     nuevo_evento = Event(posicion)
@@ -44,7 +44,7 @@ def ruta_distancia(entrada: Entrada):
 
 
 @app.post("/ruta/segura")
-def ruta_segura(entrada: EntradaRuta):
+def ruta_segura(entrada: Entrada):
     return ruteo_segura.calcular_ruta(
                     entrada.lat_origen,
                     entrada.lon_origen,
